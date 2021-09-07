@@ -1,0 +1,158 @@
+<apex:page showHeader="false" sidebar="false" lightningStylesheets="true" controller="ContactsManagerController">
+    
+    <style type="text/css">
+        .colorTextBold {
+        font-style: bold;
+        }
+        
+        .popupCust {
+        background-color: white;
+        border-width: 0px;
+        border-style: solid;
+        z-index: 9001;
+        left: 50%;
+        padding: 11px;
+        position: absolute;
+        width: 820px;
+        height: 280px;
+        margin-left: -400px;
+        top: 150px;
+        }
+        
+        .popupBackground {
+        background-color: black;
+        opacity: 0.20;
+        filter: alpha(opacity=20);
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        z-index: 9000;
+        }
+    </style>
+    
+    <apex:form id="form">
+        <apex:pageBlock title="{!$Label.ContactDatatableTitleName}" id="datatable">
+            
+            <apex:pageMessages />
+            <apex:pageBlockButtons location="top" style="float:right">
+                <apex:inputText value="{!searchString}" label="Input" /> &nbsp;
+                <apex:commandButton value="{!$Label.SearchNameButtonLabel}" action="{!search}" />
+                <apex:commandButton value="{!$Label.NewContactButtonLabel}" action="{!popupShow}" rerender="popupPanel" />  
+                
+                <apex:outputPanel id="popupPanel">
+                    <apex:outputPanel styleClass="popupBackground" layout="block" rendered="{!displayPopUp}" />
+                    <apex:outputPanel styleClass="popupCust" layout="block" rendered="{!displayPopUp}">    
+                        <p align="center" style="font-weight:bold">{!$Label.PopupNewContactHeader}</p> 
+                        
+                        <apex:pageBlockSection columns="2">
+                            <apex:inputText label="First Name" value="{!newFirstName}" />
+                            <apex:inputText label="Last Name * " value="{!newLastName}" required="true" />
+                            <apex:inputText label="Email * " value="{!newEmail}" required="true" />
+                            <apex:inputText label="Phone" value="{!newPhone}" />
+                            <apex:inputText label="Account * " value="{!newAccount}" required="true" />                             
+                            <apex:SelectList label="Contact Level" size="1" value="{!newContactLevel}">
+                                <apex:selectOptions value="{!ContactLevel}" />
+                            </apex:SelectList>
+                        </apex:pageBlockSection>
+                        
+                        <p align="right">
+                            <span class="colorTextBold">{!$Label.RequiredFieldsText}</span>
+                        </p>
+                        <p align="center">
+                            <apex:commandButton value="{!$Label.CreateButtonLabel}" action="{!save}" rerender="popupPanel" />
+                            <apex:commandButton value="{!$Label.CloseButtonLabel}" immediate="true" html-formnovalidate="formnovalidate" action="{!popupClose}" rerender="popupPanel" />
+                        </p>
+                        <apex:pageMessages />
+                    </apex:outputPanel>
+                </apex:outputPanel>
+            </apex:pageBlockButtons>
+            
+            <apex:pageBlockTable value="{!Contact}" var="row" id="thisTable">
+                <apex:column title="Del">
+                    <a href="javascript:if (window.confirm('Are you sure you want to DELETE the record?')) DeleteRecord('{!row.Id}');" style="font-weight:bold">
+                        {!$Label.DeleteButtonLabel}
+                    </a>
+                </apex:column> 
+                
+                <apex:column >
+                    <apex:facet name="header">
+                        <apex:commandLink action="{!sortByName}" reRender="datatable">
+                            <apex:outputText value="{!$ObjectType.Contact.Fields.Name.Label}" />
+                        </apex:commandLink>  
+                    </apex:facet>
+                    <apex:outputLink value="/{!row.Id}" target="_blank">
+                        <apex:outputField value="{!row.Name}" />
+                    </apex:outputLink>
+                </apex:column>
+                
+                <apex:column value="{!row.Email}">
+                    <apex:facet name="header">
+                        <apex:commandLink action="{!sortByEmail}" reRender="datatable">
+                            <apex:outputText value="{!$ObjectType.Contact.Fields.Email.Label}" />
+                        </apex:commandLink>
+                    </apex:facet>
+                </apex:column>
+                
+                <apex:column value="{!row.Contact_Level__c}">
+                    <apex:facet name="header">
+                        <apex:commandLink action="{!sortByContactLevel}" reRender="datatable">
+                            <apex:outputText value="{!$ObjectType.Contact.Fields.Contact_Level__c.Label}" />
+                        </apex:commandLink>
+                    </apex:facet>
+                </apex:column>
+                
+                <apex:column value="{!row.AccountId}">
+                    <apex:facet name="header">
+                        <apex:commandLink action="{!sortByAccountId}" reRender="datatable">
+                            <apex:outputText value="Accounts" />
+                        </apex:commandLink>
+                    </apex:facet>
+                </apex:column>
+                
+                <apex:column value="{!row.OwnerId}">
+                    <apex:facet name="header">
+                        <apex:commandLink action="{!sortByOwnerId}" reRender="datatable">
+                            <apex:outputText value="Owners" />
+                        </apex:commandLink>
+                    </apex:facet>
+                </apex:column>
+                
+                <apex:column value="{!row.CreatedById}">
+                    <apex:facet name="header">
+                        <apex:commandLink action="{!sortByCreatedById}" reRender="datatable">
+                            <apex:outputText value="Created By" />
+                        </apex:commandLink>
+                    </apex:facet>
+                </apex:column>
+                
+                <apex:column value="{!row.CreatedDate}">
+                    <apex:facet name="header">
+                        <apex:commandLink action="{!sortByCreatedDate}" reRender="datatable">
+                            <apex:outputText value="{!$ObjectType.Contact.Fields.CreatedDate.Label}" />
+                        </apex:commandLink>
+                    </apex:facet>
+                </apex:column>              
+            </apex:pageBlockTable>
+            
+            <div align="center" id="button">
+                <apex:commandButton action="{!setList.first}" value="{!$Label.FirstPageButtonLabel}" title="First Page" disabled="{!!setList.HasPrevious}" reRender="datatable,button"/>
+                <apex:commandButton action="{!setList.previous}" value="{!$Label.PreviousPageButtonLabel}" disabled="{!!setList.HasPrevious}" reRender="datatable,button" /> &nbsp;
+                <apex:SelectList value="{!PageSize}" size="1" title="Records on Pages">
+                    <apex:selectOptions value="{!PageSizeList}" />
+                    <apex:actionSupport event="onchange" reRender="datatable" />
+                </apex:SelectList>
+                &nbsp;
+                <apex:commandButton action="{!setList.next}" value="{!$Label.NextPageButtonLabel}" disabled="{!!setList.HasNext}" reRender="datatable,button" />
+                <apex:commandButton action="{!setList.last}" value="{!$Label.LastPageButtonLabel}" title="Last Page" disabled="{!!setList.HasNext}" reRender="datatable,button" />
+            </div>
+            
+        </apex:pageBlock>
+        
+        <apex:actionFunction name="DeleteRecord" action="{!DeleteRecord}" reRender="form">
+            <apex:param name="recordID" value="" assignTo="{!selectedRecordID}" />
+        </apex:actionFunction>
+        
+    </apex:form>     
+</apex:page>
